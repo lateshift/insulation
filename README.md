@@ -4,6 +4,12 @@ Browser-based experiments and references for the insulation batting pattern from
 
 > Disclaimer: these HTML tools are inspired by the original LISP routine, but they are **not** a 1:1 conversion. The algorithms were adapted and tweaked for browser rendering, interaction, clipping, and especially corner handling / corner rounding behavior, as well as horizontal fill behavior.
 
+## Screenshots
+
+![Arc](screenshots/arc.png)
+
+![Horizontal Clone](screenshots/hclone.png)
+
 ## Files
 
 - `index.html`
