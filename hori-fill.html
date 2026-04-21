@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Horizontal Insulation Fill — Paper.js</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --panel: rgba(25, 29, 39, 0.92);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text: #eaf0ff;
+      --muted: #9fb0d0;
+      --accent: #7dd3fc;
+      --canvas-bg: #f8fafc;
+      --canvas-grid: rgba(15, 23, 42, 0.08);
+      --button: #1f2937;
+      --button-hover: #2b3647;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font: 14px/1.4 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #0f172a, #111827 50%, #0b1220);
+      overflow: hidden;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      height: 100%;
+    }
+
+    .panel {
+      padding: 18px 16px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid var(--panel-border);
+      overflow: auto;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .sub {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .group {
+      margin: 0 0 16px;
+      padding: 12px;
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .group h2 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    label {
+      display: block;
+      margin: 0 0 6px;
+      font-weight: 600;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    input[type="number"],
+    select,
+    button {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font: inherit;
+    }
+
+    input[type="number"],
+    select {
+      background: rgba(10, 14, 24, 0.9);
+      color: var(--text);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      padding: 0;
+      background: transparent;
+    }
+
+    button {
+      background: var(--button);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.06s ease;
+    }
+
+    button:hover { background: var(--button-hover); }
+    button:active { transform: translateY(1px); }
+    button.primary { background: #0369a1; }
+    button.primary:hover { background: #075985; }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      margin: 6px 0;
+    }
+
+    .check input {
+      width: auto;
+      margin: 0;
+    }
+
+    .hint, .status {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .status {
+      min-height: 34px;
+      margin-top: 8px;
+      color: #dbeafe;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-width: 0;
+      background:
+        linear-gradient(var(--canvas-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px),
+        var(--canvas-bg);
+      background-size: 24px 24px, 24px 24px, auto;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .overlay {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.8);
+      color: #dbeafe;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      max-width: 360px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 1px 4px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="panel">
+      <h1>Horizontal Fill</h1>
+      <p class="sub">Single-file Paper.js page for filling a rectangle with a horizontal batt-insulation pattern.</p>
+
+      <div class="group">
+        <h2>Rectangle</h2>
+        <label for="widthInput">Width / Height</label>
+        <div class="row">
+          <input id="widthInput" type="number" min="40" step="10" value="760">
+          <input id="heightInput" type="number" min="24" step="4" value="180">
+        </div>
+        <div class="row-3">
+          <button id="presetWideBtn">Wide</button>
+          <button id="presetSquareBtn">Square</button>
+          <button id="presetTallBtn">Tall</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Pattern</h2>
+        <label for="spacingRange">Curl Spacing</label>
+        <div class="row">
+          <input id="spacingRange" type="range" min="0.65" max="1.75" step="0.01" value="1">
+          <input id="spacingInput" type="number" min="0.65" max="1.75" step="0.01" value="1">
+        </div>
+
+        <label for="upperGapInput">Upper / Lower Gap</label>
+        <div class="row">
+          <input id="upperGapInput" type="number" min="0" step="1" value="12">
+          <input id="lowerGapInput" type="number" min="0" step="1" value="12">
+        </div>
+
+        <label for="strokeInput">Stroke Width</label>
+        <input id="strokeInput" type="number" min="1" step="0.25" value="1">
+
+        <div class="check"><input id="showBoundsInput" type="checkbox" checked> <span>Show bounding rectangle</span></div>
+        <div class="check"><input id="autoPreviewInput" type="checkbox" checked> <span>Auto-regenerate</span></div>
+
+        <div class="row" style="margin-top: 10px;">
+          <button id="generateBtn" class="primary">Generate</button>
+          <button id="exportBtn">Export SVG</button>
+        </div>
+        <div id="status" class="status">Ready.</div>
+      </div>
+
+      <div class="group">
+        <h2>Notes</h2>
+        <div class="hint">
+          This page now uses the <strong>same batt point sequence</strong> as the main insulation-path generator on a straight horizontal axis. The usable height becomes the batt thickness, the horizontal segment length is derived from that thickness, and the rectangle width only reveals more or less of the repeating pattern.
+        </div>
+      </div>
+    </aside>
+
+    <main class="canvas-wrap">
+      <canvas id="paperCanvas" resize></canvas>
+    </main>
+  </div>
+
+  <script src="./paper-full.min.js"></script>
+  <script>
+    paper.install(window);
+
+    const canvas = document.getElementById('paperCanvas');
+    paper.setup(canvas);
+
+    const ui = {
+      widthInput: document.getElementById('widthInput'),
+      heightInput: document.getElementById('heightInput'),
+      presetWideBtn: document.getElementById('presetWideBtn'),
+      presetSquareBtn: document.getElementById('presetSquareBtn'),
+      presetTallBtn: document.getElementById('presetTallBtn'),
+      spacingRange: document.getElementById('spacingRange'),
+      spacingInput: document.getElementById('spacingInput'),
+      upperGapInput: document.getElementById('upperGapInput'),
+      lowerGapInput: document.getElementById('lowerGapInput'),
+      strokeInput: document.getElementById('strokeInput'),
+      showBoundsInput: document.getElementById('showBoundsInput'),
+      autoPreviewInput: document.getElementById('autoPreviewInput'),
+      generateBtn: document.getElementById('generateBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      status: document.getElementById('status')
+    };
+
+    const colors = {
+      pattern: '#dc2626',
+      bounds: '#2563eb'
+    };
+
+    let resultItem = null;
+    let rectState = null;
+    let dragState = null;
+    const minRectSize = { width: 40, height: 24 };
+
+    function setStatus(message) {
+      ui.status.textContent = message;
+    }
+
+    function ensureCanvasSize() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.round(rect.width * dpr));
+      const height = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        paper.view.viewSize = new Size(rect.width, rect.height);
+      }
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function getNumber(input, fallback) {
+      const value = Number(input.value);
+      return Number.isFinite(value) ? value : fallback;
+    }
+
+    function getWidthValue() {
+      return Math.max(40, getNumber(ui.widthInput, 760));
+    }
+
+    function getHeightValue() {
+      return Math.max(24, getNumber(ui.heightInput, 180));
+    }
+
+    function getSpacingFactor() {
+      return clamp(getNumber(ui.spacingInput, 1), 0.65, 1.75);
+    }
+
+    function getUpperGap() {
+      return Math.max(0, getNumber(ui.upperGapInput, 12));
+    }
+
+    function getLowerGap() {
+      return Math.max(0, getNumber(ui.lowerGapInput, 12));
+    }
+
+    function getStrokeWidth() {
+      return Math.max(1, getNumber(ui.strokeInput, 1));
+    }
+
+    function syncSpacing(from, to) {
+      const value = clamp(Number(from.value) || 1, 0.65, 1.75);
+      const normalized = value.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+      from.value = normalized;
+      to.value = normalized;
+      maybeGenerate();
+    }
+
+    function clearResult() {
+      if (resultItem) {
+        resultItem.remove();
+        resultItem = null;
+      }
+    }
+
+    function stylePattern(item) {
+      if (item.children && item.children.length) {
+        item.children.forEach(stylePattern);
+        return;
+      }
+      item.strokeColor = colors.pattern;
+      item.strokeWidth = getStrokeWidth();
+      item.strokeCap = 'round';
+      item.strokeJoin = 'round';
+      item.fillColor = null;
+    }
+
+    function styleBounds(path) {
+      path.strokeColor = colors.bounds;
+      path.strokeWidth = 2;
+      path.dashArray = [10, 6];
+      path.fillColor = null;
+    }
+
+    function ensureRectState() {
+      if (!rectState) {
+        rectState = {
+          center: paper.view.center.clone(),
+          width: getWidthValue(),
+          height: getHeightValue()
+        };
+      }
+      return rectState;
+    }
+
+    function syncInputsFromRectState() {
+      ensureRectState();
+      ui.widthInput.value = Math.round(rectState.width);
+      ui.heightInput.value = Math.round(rectState.height);
+    }
+
+    function buildCurrentRectangle() {
+      ensureRectState();
+      return new Rectangle(
+        new Point(rectState.center.x - rectState.width / 2, rectState.center.y - rectState.height / 2),
+        new Size(rectState.width, rectState.height)
+      );
+    }
+
+    function setRectFromBounds(left, top, right, bottom) {
+      rectState = {
+        center: new Point((left + right) / 2, (top + bottom) / 2),
+        width: Math.max(minRectSize.width, right - left),
+        height: Math.max(minRectSize.height, bottom - top)
+      };
+      syncInputsFromRectState();
+    }
+
+    function applyDimensionsFromInputs() {
+      ensureRectState();
+      rectState.width = getWidthValue();
+      rectState.height = getHeightValue();
+      maybeGenerate();
+    }
+
+    function fitRect(rect) {
+      const bounds = rect.expand(80);
+      if (bounds.width <= 0 || bounds.height <= 0) return;
+
+      const viewSize = paper.view.viewSize;
+      if (!viewSize || viewSize.width <= 0 || viewSize.height <= 0) return;
+
+      const scaleX = viewSize.width / bounds.width;
+      const scaleY = viewSize.height / bounds.height;
+      const zoom = Math.min(scaleX, scaleY);
+
+      paper.view.center = bounds.center;
+      paper.view.zoom = zoom;
+    }
+
+    function addResizeControls(root, rect) {
+      const boundsPath = new Path.Rectangle(rect);
+      styleBounds(boundsPath);
+      boundsPath.data.hitRole = 'frame';
+      root.addChild(boundsPath);
+
+      const handleSize = clamp(Math.min(rect.width, rect.height) * 0.035, 7, 12);
+      const handlePositions = {
+        nw: rect.topLeft,
+        n: new Point(rect.center.x, rect.top),
+        ne: rect.topRight,
+        e: new Point(rect.right, rect.center.y),
+        se: rect.bottomRight,
+        s: new Point(rect.center.x, rect.bottom),
+        sw: rect.bottomLeft,
+        w: new Point(rect.left, rect.center.y)
+      };
+
+      Object.entries(handlePositions).forEach(([role, point]) => {
+        const handle = new Path.Rectangle({
+          point: point.subtract(handleSize / 2),
+          size: new Size(handleSize, handleSize),
+          radius: Math.min(3, handleSize * 0.25)
+        });
+        handle.fillColor = '#ffffff';
+        handle.strokeColor = colors.bounds;
+        handle.strokeWidth = 1.5;
+        handle.data.hitRole = role;
+        root.addChild(handle);
+      });
+    }
+
+    function buildHybridBattPath(entries, tension = 0.92) {
+      const path = new Path({ insert: false, closed: false });
+      if (!entries.length) return path;
+
+      const points = entries.map(entry => entry.point);
+      path.add(points[0]);
+      if (points.length === 1) return path;
+
+      const pointInfo = points.map((point, index) => {
+        const prev = index > 0 ? points[index - 1] : points[index];
+        const next = index < points.length - 1 ? points[index + 1] : points[index];
+        const before = point.subtract(prev);
+        const after = next.subtract(point);
+        const xTurn = before.x * after.x <= 0;
+        const yTurn = before.y * after.y <= 0;
+        const xSpan = Math.max(Math.abs(before.x), Math.abs(after.x));
+        const localSpan = Math.min(
+          before.length > 0.001 ? before.length : Infinity,
+          after.length > 0.001 ? after.length : Infinity
+        );
+
+        let kind = entries[index].kind || 'normal';
+        let tangent = next.subtract(prev).multiply(0.5 * tension);
+
+        if (index === 0 || index === points.length - 1) {
+          kind = 'end';
+          tangent = new Point(next.x - prev.x, 0).multiply(0.5 * tension);
+        } else if (kind === 'peak' || (yTurn && !xTurn)) {
+          kind = 'peak';
+          const signX = Math.sign(next.x - prev.x) || 1;
+          tangent = new Point(signX * xSpan * 1.5 * tension, 0);
+        } else if (xTurn && !yTurn) {
+          kind = 'side';
+          tangent = new Point(0, tangent.y);
+        }
+
+        if (Number.isFinite(localSpan)) {
+          const maxTangent = localSpan * (kind === 'peak' ? 2.1 : 1.55);
+          if (tangent.length > maxTangent) tangent = tangent.normalize(maxTangent);
+        }
+
+        return { tangent, kind };
+      });
+
+      function canUseWidePeakArc(index) {
+        if (index + 6 >= entries.length) return false;
+        const seq = entries.slice(index, index + 7);
+        const kinds = seq.map(entry => entry.kind).join(',');
+        const sameSide = seq.every(entry => entry.side === seq[0].side);
+        return sameSide && kinds === 'capEdge,capInner,shoulder,peak,shoulder,capInner,capEdge';
+      }
+
+      let i = 0;
+      while (i < points.length - 1) {
+        if (canUseWidePeakArc(i)) {
+          path.arcTo(points[i + 3], points[i + 6]);
+          i += 6;
+          continue;
+        }
+
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        let handleOut = pointInfo[i].tangent.divide(3);
+        let handleIn = pointInfo[i + 1].tangent.divide(3);
+
+        const segmentLength = Math.max(0.001, p2.getDistance(p1));
+        const peakAdjacent = pointInfo[i].kind === 'peak' || pointInfo[i + 1].kind === 'peak';
+        const maxHandle = segmentLength * (peakAdjacent ? 0.74 : 0.56);
+        if (handleOut.length > maxHandle) handleOut = handleOut.normalize(maxHandle);
+        if (handleIn.length > maxHandle) handleIn = handleIn.normalize(maxHandle);
+
+        const cp1 = p1.add(handleOut);
+        const cp2 = p2.subtract(handleIn);
+        path.cubicCurveTo(cp1, cp2, p2);
+        i += 1;
+      }
+
+      return path;
+    }
+
+    function buildHorizontalFill(rect, options) {
+      const upperGap = Math.max(0, options.upperGap);
+      const lowerGap = Math.max(0, options.lowerGap);
+      const usableTop = rect.top + upperGap;
+      const usableBottom = rect.bottom - lowerGap;
+      const usableHeight = usableBottom - usableTop;
+
+      if (usableHeight <= 8) {
+        return null;
+      }
+
+      const axisY = (usableTop + usableBottom) / 2;
+      const thickness = usableHeight;
+
+      // Same default proportion as the main batt generator on a straight path:
+      // slength ~= 0.2 * thickness, with a user spacing multiplier.
+      const slength = Math.max(6, thickness * 0.2 * options.spacingFactor);
+      const cycle = slength * 2;
+      const phaseOrigin = rect.center.x;
+      const extra = cycle * 3;
+      const xStart = phaseOrigin - Math.ceil((phaseOrigin - (rect.left - extra)) / cycle) * cycle;
+      const xEnd = phaseOrigin + Math.ceil(((rect.right + extra) - phaseOrigin) / cycle) * cycle;
+      const segmentCount = Math.max(2, Math.round((xEnd - xStart) / slength));
+
+      const sampleEntries = [];
+      let side = 1;
+
+      function battPoint(segmentBaseX, advPro, offPro, sideSign) {
+        return new Point(
+          segmentBaseX + advPro * slength,
+          axisY - sideSign * offPro * thickness
+        );
+      }
+
+      function pushPoint(segmentBaseX, advPro, offPro, sideSign, kind = 'normal') {
+        const point = battPoint(segmentBaseX, advPro, offPro, sideSign);
+        const last = sampleEntries[sampleEntries.length - 1];
+        if (!last || last.point.getDistance(point) > 0.01) {
+          sampleEntries.push({ point, offPro, side: sideSign, kind });
+        }
+      }
+
+      pushPoint(xStart, 0, 0.5, side, 'peak');
+
+      for (let i = 0; i < segmentCount; i++) {
+        const baseX = xStart + i * slength;
+
+        // Use the fuller high-resolution batt sequence, not only the coarse straight-line points.
+        pushPoint(baseX, 0.3, 0.49, side, 'shoulder');
+        pushPoint(baseX, 0.6, 0.46, side, 'capInner');
+        pushPoint(baseX, 0.8, 0.42, side, 'capEdge');
+        pushPoint(baseX, 1.0, 0.30, side);
+        pushPoint(baseX, 0.9, 0.19, side);
+        pushPoint(baseX, 0.8, 0.14, side);
+
+        side = -side;
+
+        pushPoint(baseX, 0.2, 0.14, side);
+        pushPoint(baseX, 0.1, 0.19, side);
+        pushPoint(baseX, 0.0, 0.30, side);
+        pushPoint(baseX, 0.2, 0.42, side, 'capEdge');
+        pushPoint(baseX, 0.4, 0.46, side, 'capInner');
+        pushPoint(baseX, 0.7, 0.49, side, 'shoulder');
+        pushPoint(baseX, 1.0, 0.5, side, 'peak');
+      }
+
+      const pattern = buildHybridBattPath(sampleEntries, 1.08);
+
+      const clipMask = new Path.Rectangle(rect);
+      clipMask.clipMask = true;
+      clipMask.fillColor = 'white';
+      clipMask.strokeColor = null;
+
+      const clipGroup = new Group({ children: [clipMask, pattern], clipped: true, insert: false });
+      const root = new Group({ insert: true });
+      root.addChild(clipGroup);
+
+      stylePattern(pattern);
+
+      if (options.showBounds) {
+        addResizeControls(root, rect);
+      }
+
+      root.data = {
+        slength,
+        cycle,
+        usableHeight,
+        thickness,
+        axisY,
+        rectBounds: rect.clone()
+      };
+
+      return root;
+    }
+
+    function generate(refit = false) {
+      clearResult();
+      const rect = buildCurrentRectangle();
+      const result = buildHorizontalFill(rect, {
+        spacingFactor: getSpacingFactor(),
+        upperGap: getUpperGap(),
+        lowerGap: getLowerGap(),
+        showBounds: ui.showBoundsInput.checked
+      });
+
+      if (!result) {
+        setStatus('Upper and lower gaps leave no room for the pattern.');
+        paper.view.update();
+        return;
+      }
+
+      resultItem = result;
+      if (refit) fitRect(rect);
+      setStatus(`Generated fill: ${rect.width.toFixed(0)} × ${rect.height.toFixed(0)}, spacing ${getSpacingFactor().toFixed(2)}, batt thickness ${result.data.thickness.toFixed(1)}, S-length ${result.data.slength.toFixed(1)}, cycle ${result.data.cycle.toFixed(1)}.`);
+      paper.view.update();
+    }
+
+    function maybeGenerate() {
+      if (ui.autoPreviewInput.checked) {
+        generate(false);
+      }
+    }
+
+    function setPreset(width, height, upperGap = 12, lowerGap = 12) {
+      rectState = {
+        center: paper.view.center.clone(),
+        width,
+        height
+      };
+      syncInputsFromRectState();
+      ui.upperGapInput.value = upperGap;
+      ui.lowerGapInput.value = lowerGap;
+      generate(true);
+    }
+
+    function exportSvg() {
+      if (!resultItem) {
+        setStatus('Nothing to export.');
+        return;
+      }
+      const svg = paper.project.exportSVG({ asString: true, matchShapes: true, precision: 3 });
+      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'horizontal-insulation-fill.svg';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setStatus('Exported SVG.');
+    }
+
+    function getResizeCursor(role) {
+      const map = {
+        n: 'ns-resize',
+        s: 'ns-resize',
+        e: 'ew-resize',
+        w: 'ew-resize',
+        ne: 'nesw-resize',
+        sw: 'nesw-resize',
+        nw: 'nwse-resize',
+        se: 'nwse-resize'
+      };
+      return map[role] || 'default';
+    }
+
+    function detectResizeRole(point) {
+      if (!ui.showBoundsInput.checked) return null;
+
+      const rect = buildCurrentRectangle();
+      const tol = 12 / Math.max(paper.view.zoom || 1, 0.001);
+      const positions = {
+        nw: rect.topLeft,
+        n: new Point(rect.center.x, rect.top),
+        ne: rect.topRight,
+        e: new Point(rect.right, rect.center.y),
+        se: rect.bottomRight,
+        s: new Point(rect.center.x, rect.bottom),
+        sw: rect.bottomLeft,
+        w: new Point(rect.left, rect.center.y)
+      };
+
+      for (const [role, pos] of Object.entries(positions)) {
+        if (point.getDistance(pos) <= tol * 1.2) return role;
+      }
+
+      const nearLeft = Math.abs(point.x - rect.left) <= tol;
+      const nearRight = Math.abs(point.x - rect.right) <= tol;
+      const nearTop = Math.abs(point.y - rect.top) <= tol;
+      const nearBottom = Math.abs(point.y - rect.bottom) <= tol;
+      const withinY = point.y >= rect.top - tol && point.y <= rect.bottom + tol;
+      const withinX = point.x >= rect.left - tol && point.x <= rect.right + tol;
+
+      if (nearLeft && nearTop) return 'nw';
+      if (nearRight && nearTop) return 'ne';
+      if (nearLeft && nearBottom) return 'sw';
+      if (nearRight && nearBottom) return 'se';
+      if (nearLeft && withinY) return 'w';
+      if (nearRight && withinY) return 'e';
+      if (nearTop && withinX) return 'n';
+      if (nearBottom && withinX) return 's';
+      return null;
+    }
+
+    function updateCursor(point) {
+      const role = detectResizeRole(point);
+      canvas.style.cursor = role ? getResizeCursor(role) : 'default';
+    }
+
+    const tool = new Tool();
+    tool.activate();
+
+    tool.onMouseDown = function(event) {
+      const role = detectResizeRole(event.point);
+      if (!role) return;
+
+      const rect = buildCurrentRectangle();
+      dragState = {
+        role,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom
+      };
+      canvas.style.cursor = getResizeCursor(dragState.role);
+    };
+
+    tool.onMouseDrag = function(event) {
+      if (!dragState) return;
+
+      let { left, right, top, bottom } = dragState;
+      const role = dragState.role;
+
+      if (role.includes('w')) left = Math.min(event.point.x, right - minRectSize.width);
+      if (role.includes('e')) right = Math.max(event.point.x, left + minRectSize.width);
+      if (role.includes('n')) top = Math.min(event.point.y, bottom - minRectSize.height);
+      if (role.includes('s')) bottom = Math.max(event.point.y, top + minRectSize.height);
+
+      setRectFromBounds(left, top, right, bottom);
+      generate(false);
+      canvas.style.cursor = getResizeCursor(role);
+    };
+
+    tool.onMouseUp = function(event) {
+      dragState = null;
+      updateCursor(event.point);
+    };
+
+    tool.onMouseMove = function(event) {
+      if (!dragState) updateCursor(event.point);
+    };
+
+    ui.generateBtn.addEventListener('click', () => generate(false));
+    ui.exportBtn.addEventListener('click', exportSvg);
+    ui.presetWideBtn.addEventListener('click', () => setPreset(760, 180, 12, 12));
+    ui.presetSquareBtn.addEventListener('click', () => setPreset(320, 320, 20, 20));
+    ui.presetTallBtn.addEventListener('click', () => setPreset(240, 460, 18, 18));
+
+    [ui.upperGapInput, ui.lowerGapInput, ui.strokeInput, ui.showBoundsInput, ui.autoPreviewInput]
+      .forEach(el => {
+        el.addEventListener('input', maybeGenerate);
+        el.addEventListener('change', maybeGenerate);
+      });
+
+    [ui.widthInput, ui.heightInput].forEach(el => {
+      el.addEventListener('input', applyDimensionsFromInputs);
+      el.addEventListener('change', applyDimensionsFromInputs);
+    });
+
+    ui.spacingRange.addEventListener('input', () => syncSpacing(ui.spacingRange, ui.spacingInput));
+    ui.spacingRange.addEventListener('change', () => syncSpacing(ui.spacingRange, ui.spacingInput));
+    ui.spacingInput.addEventListener('input', () => syncSpacing(ui.spacingInput, ui.spacingRange));
+    ui.spacingInput.addEventListener('change', () => syncSpacing(ui.spacingInput, ui.spacingRange));
+
+    window.addEventListener('resize', () => {
+      ensureCanvasSize();
+      if (!rectState) ensureRectState();
+      generate(false);
+    });
+
+    ensureCanvasSize();
+    ensureRectState();
+    syncInputsFromRectState();
+    generate(true);
+  </script>
+</body>
+</html>

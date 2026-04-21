@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>InsulBattingPoly — Paper.js</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #10131a;
+      --panel: rgba(25, 29, 39, 0.92);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text: #eaf0ff;
+      --muted: #9fb0d0;
+      --accent: #7dd3fc;
+      --accent-2: #fca5a5;
+      --canvas-bg: #f8fafc;
+      --canvas-grid: rgba(15, 23, 42, 0.08);
+      --button: #1f2937;
+      --button-hover: #2b3647;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font: 14px/1.4 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #0f172a, #111827 50%, #0b1220);
+      overflow: hidden;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      height: 100%;
+      gap: 0;
+    }
+
+    .panel {
+      padding: 18px 16px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid var(--panel-border);
+      overflow: auto;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .sub {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .group {
+      margin: 0 0 16px;
+      padding: 12px;
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .group h2 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    label {
+      display: block;
+      margin: 0 0 6px;
+      font-weight: 600;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    input[type="number"],
+    select,
+    button {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font: inherit;
+    }
+
+    input[type="number"],
+    select {
+      background: rgba(10, 14, 24, 0.9);
+      color: var(--text);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      padding: 0;
+      background: transparent;
+    }
+
+    button {
+      background: var(--button);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.06s ease;
+    }
+
+    button:hover { background: var(--button-hover); }
+    button:active { transform: translateY(1px); }
+    button.primary { background: #0369a1; }
+    button.primary:hover { background: #075985; }
+    button.warn { background: #7f1d1d; }
+    button.warn:hover { background: #991b1b; }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      margin: 6px 0;
+    }
+
+    .check input {
+      width: auto;
+      margin: 0;
+    }
+
+    .hint, .status {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .status {
+      min-height: 34px;
+      margin-top: 8px;
+      color: #dbeafe;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-width: 0;
+      background:
+        linear-gradient(var(--canvas-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px),
+        var(--canvas-bg);
+      background-size: 24px 24px, 24px 24px, auto;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .overlay {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.8);
+      color: #dbeafe;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      max-width: 340px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 1px 4px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="panel">
+      <h1>InsulBattingPoly</h1>
+      <p class="sub">Single-file Paper.js browser version inspired by <code>InsulBattingPoly.lsp</code>.</p>
+
+      <div class="group">
+        <h2>Path</h2>
+        <div class="row">
+          <button id="drawBtn">Draw Polyline</button>
+          <button id="finishOpenBtn">Finish Open</button>
+        </div>
+        <div class="row">
+          <button id="finishClosedBtn">Finish Closed</button>
+          <button id="clearBtn" class="warn">Clear</button>
+        </div>
+        <div class="row-3">
+          <button id="presetLineBtn">Line</button>
+          <button id="presetArcBtn">Arc</button>
+          <button id="presetCircleBtn">Circle</button>
+        </div>
+        <div class="row-3">
+          <button id="presetEllipseBtn">Ellipse</button>
+          <button id="presetRectBtn">Rectangle</button>
+          <button id="presetWaveBtn">Spline</button>
+        </div>
+        <div class="hint">Click points on the canvas while in draw mode. Press <code>Enter</code> for open or <code>C</code> for closed.</div>
+      </div>
+
+      <div class="group">
+        <h2>Batting</h2>
+        <label for="thicknessInput">Thickness</label>
+        <div class="row">
+          <input id="thicknessInput" type="number" min="1" step="0.1" value="24">
+          <select id="thicknessPreset">
+            <option value="">Presets…</option>
+            <option value="3.5">A = 3.5</option>
+            <option value="5.5">B = 5.5</option>
+            <option value="9.5">C = 9.5</option>
+            <option value="12">D = 12</option>
+            <option value="16">16</option>
+            <option value="24">24</option>
+            <option value="32">32</option>
+          </select>
+        </div>
+
+        <label for="justificationSelect">Justification</label>
+        <select id="justificationSelect">
+          <option value="center">Center</option>
+          <option value="left">Left / Inside</option>
+          <option value="right">Right / Outside</option>
+        </select>
+
+        <label for="strokeInput" style="margin-top: 10px;">Stroke Width</label>
+        <input id="strokeInput" type="number" min="1" step="0.25" value="1">
+
+        <label for="cornerRadiusInput" style="margin-top: 10px;">Corner Radius</label>
+        <div class="row">
+          <input id="cornerRadiusInput" type="range" min="0.4" max="2.5" step="0.05" value="1">
+          <input id="cornerRadiusValue" type="number" min="0.4" max="2.5" step="0.05" value="1">
+        </div>
+
+        <label for="cornerModeSelect">Corner Handling</label>
+        <select id="cornerModeSelect">
+          <option value="rounded">Rounded corners</option>
+          <option value="break">Hard break at corners</option>
+        </select>
+
+        <div class="check"><input id="showBaseInput" type="checkbox" checked> <span>Show base path</span></div>
+        <div class="check"><input id="autoPreviewInput" type="checkbox" checked> <span>Auto-regenerate</span></div>
+
+        <div class="row" style="margin-top: 10px;">
+          <button id="generateBtn" class="primary">Generate</button>
+          <button id="exportBtn">Export SVG</button>
+        </div>
+        <div id="status" class="status">Loaded line preset.</div>
+      </div>
+
+      <div class="group">
+        <h2>Notes</h2>
+        <div class="hint">
+          Sharp polyline corners can now be handled in two ways: round the base path before generating curls, or break the batting at corners. Use the corner radius slider to tune how much corner trimming/rounding is applied.
+        </div>
+      </div>
+    </aside>
+
+    <main class="canvas-wrap">
+      <canvas id="paperCanvas" resize></canvas>
+    </main>
+  </div>
+
+  <script src="./paper-full.min.js"></script>
+  <script>
+    paper.install(window);
+
+    const canvas = document.getElementById('paperCanvas');
+    paper.setup(canvas);
+
+    const ui = {
+      drawBtn: document.getElementById('drawBtn'),
+      finishOpenBtn: document.getElementById('finishOpenBtn'),
+      finishClosedBtn: document.getElementById('finishClosedBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      presetLineBtn: document.getElementById('presetLineBtn'),
+      presetArcBtn: document.getElementById('presetArcBtn'),
+      presetCircleBtn: document.getElementById('presetCircleBtn'),
+      presetEllipseBtn: document.getElementById('presetEllipseBtn'),
+      presetRectBtn: document.getElementById('presetRectBtn'),
+      presetWaveBtn: document.getElementById('presetWaveBtn'),
+      thicknessInput: document.getElementById('thicknessInput'),
+      thicknessPreset: document.getElementById('thicknessPreset'),
+      justificationSelect: document.getElementById('justificationSelect'),
+      strokeInput: document.getElementById('strokeInput'),
+      cornerRadiusInput: document.getElementById('cornerRadiusInput'),
+      cornerRadiusValue: document.getElementById('cornerRadiusValue'),
+      cornerModeSelect: document.getElementById('cornerModeSelect'),
+      showBaseInput: document.getElementById('showBaseInput'),
+      autoPreviewInput: document.getElementById('autoPreviewInput'),
+      generateBtn: document.getElementById('generateBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      status: document.getElementById('status')
+    };
+
+    const colors = {
+      base: '#2563eb',
+      draft: '#0ea5e9',
+      result: '#dc2626'
+    };
+
+    let basePath = null;
+    let resultPath = null;
+    let draftPath = null;
+    let drawing = false;
+
+    function setStatus(message) {
+      ui.status.textContent = message;
+    }
+
+    function ensureCanvasSize() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.round(rect.width * dpr));
+      const height = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        paper.view.viewSize = new Size(rect.width, rect.height);
+      }
+    }
+
+    function styleBase(path) {
+      path.strokeColor = colors.base;
+      path.strokeWidth = 2;
+      path.dashArray = [10, 6];
+      path.fillColor = null;
+      path.visible = ui.showBaseInput.checked;
+    }
+
+    function styleDraft(path) {
+      path.strokeColor = colors.draft;
+      path.strokeWidth = 2;
+      path.dashArray = [6, 6];
+      path.fillColor = null;
+      path.fullySelected = true;
+    }
+
+    function styleResult(item) {
+      if (item && item.children && item.children.length) {
+        item.children.forEach(styleResult);
+        return;
+      }
+      item.strokeColor = colors.result;
+      item.strokeWidth = getStrokeWidth();
+      item.strokeCap = 'round';
+      item.strokeJoin = 'round';
+      item.fillColor = null;
+      item.dashArray = [];
+    }
+
+    function clearResult() {
+      if (resultPath) {
+        resultPath.remove();
+        resultPath = null;
+      }
+    }
+
+    function clearAll() {
+      if (basePath) {
+        basePath.remove();
+        basePath = null;
+      }
+      if (draftPath) {
+        draftPath.remove();
+        draftPath = null;
+      }
+      clearResult();
+      drawing = false;
+      paper.view.update();
+      setStatus('Cleared.');
+    }
+
+    function getThickness() {
+      const value = Number(ui.thicknessInput.value);
+      return Number.isFinite(value) && value > 0 ? value : 24;
+    }
+
+    function getStrokeWidth() {
+      const value = Number(ui.strokeInput.value);
+      return Number.isFinite(value) && value > 0 ? value : 1;
+    }
+
+    function getJustificationOffset(thickness, mode = ui.justificationSelect.value) {
+      if (mode === 'left') return thickness * 0.5;
+      if (mode === 'right') return -thickness * 0.5;
+      return 0;
+    }
+
+    function getCornerRadiusFactor() {
+      const value = Number(ui.cornerRadiusValue.value);
+      return Number.isFinite(value) && value > 0 ? value : 1;
+    }
+
+    function isCurvedPath(path) {
+      if (!path || !path.curves) return false;
+      return path.curves.some(curve => !curve.isStraight());
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function smoothstep(value) {
+      const t = clamp(value, 0, 1);
+      return t * t * (3 - 2 * t);
+    }
+
+    function signedTurn(a, b) {
+      return (a.x * b.y) - (a.y * b.x);
+    }
+
+    function normalizeDistance(path, distance) {
+      if (!path || path.length <= 0) return 0;
+      if (path.closed) {
+        const len = path.length;
+        let d = distance % len;
+        if (d < 0) d += len;
+        return d;
+      }
+      return Math.max(0, Math.min(path.length, distance));
+    }
+
+    function normalizedDelta(a, b, closed) {
+      let d = a - b;
+      if (closed) {
+        if (d > 0.5) d -= 1;
+        if (d < -0.5) d += 1;
+      }
+      return d;
+    }
+
+    function getFrame(path, distance) {
+      const len = Math.max(path.length, 0.0001);
+      const d = normalizeDistance(path, distance);
+      const epsilon = Math.min(Math.max(len / 1000, 0.01), 0.75);
+
+      let point = path.getPointAt(d);
+      let tangent = path.getTangentAt(d);
+
+      if (!point || !tangent || tangent.length === 0) {
+        const probes = [d - epsilon, d + epsilon, 0, len * 0.5, len - epsilon];
+        for (const probe of probes) {
+          const pd = normalizeDistance(path, probe);
+          point = point || path.getPointAt(pd);
+          tangent = tangent || path.getTangentAt(pd);
+          if (point && tangent && tangent.length) break;
+        }
+      }
+
+      if (!point) point = path.firstSegment ? path.firstSegment.point.clone() : new Point(0, 0);
+      if (!tangent || tangent.length === 0) tangent = new Point(1, 0);
+
+      tangent = tangent.normalize();
+      const leftNormal = new Point(tangent.y, -tangent.x).normalize();
+      return { point, tangent, leftNormal };
+    }
+
+    function buildWorkingPath(path, justificationOffset) {
+      if (Math.abs(justificationOffset) < 1e-6) {
+        return path.clone(false);
+      }
+
+      const sampleCount = Math.max(48, Math.min(900, Math.ceil(path.length / 8)));
+      const working = new Path({ insert: false, closed: path.closed });
+      const count = path.closed ? sampleCount : sampleCount - 1;
+
+      for (let i = 0; i <= count; i++) {
+        const ratio = path.closed ? (i / sampleCount) : (i / Math.max(1, sampleCount - 1));
+        const distance = path.length * ratio;
+        const frame = getFrame(path, distance);
+        working.add(frame.point.add(frame.leftNormal.multiply(justificationOffset)));
+      }
+
+      if (path.closed && working.segments.length > 1) {
+        const first = working.firstSegment.point;
+        const last = working.lastSegment.point;
+        if (first.getDistance(last) < 0.001) {
+          working.removeSegment(working.segments.length - 1);
+        }
+        working.closed = true;
+      }
+
+      if (isCurvedPath(path)) {
+        working.smooth({ type: 'catmull-rom', factor: 0.5 });
+      }
+
+      return working;
+    }
+
+    function isPolylineLike(path) {
+      return !!(path && path.curves && path.curves.length > 0) && path.curves.every(curve => curve.isStraight());
+    }
+
+    function addPathPoint(path, point) {
+      const last = path.lastSegment && path.lastSegment.point;
+      if (!last || last.getDistance(point) > 0.01) {
+        path.add(point);
+      }
+    }
+
+    function detectSharpCorners(path, thickness, cornerRadiusFactor = 1) {
+      if (!isPolylineLike(path) || !path.segments || path.segments.length < 3 || path.length <= 0.01) {
+        return [];
+      }
+
+      const corners = [];
+      const segments = path.segments;
+      const count = segments.length;
+      const start = path.closed ? 0 : 1;
+      const end = path.closed ? count : count - 1;
+
+      for (let i = start; i < end; i++) {
+        const prev = segments[(i - 1 + count) % count].point;
+        const current = segments[i].point;
+        const next = segments[(i + 1) % count].point;
+        const incoming = current.subtract(prev);
+        const outgoing = next.subtract(current);
+
+        if (incoming.length < 0.01 || outgoing.length < 0.01) continue;
+
+        const a = incoming.normalize();
+        const b = outgoing.normalize();
+        const dot = clamp(a.dot(b), -1, 1);
+        const angle = Math.acos(dot) * 180 / Math.PI;
+        if (angle < 24) continue;
+
+        const sharpness = clamp((angle - 24) / 96, 0, 1);
+        const adjacent = Math.min(incoming.length, outgoing.length);
+        const maxCut = adjacent * 0.42;
+        const preferred = thickness * (0.75 + 0.85 * sharpness) * cornerRadiusFactor;
+        const minCut = Math.min(thickness * 0.2 * cornerRadiusFactor, maxCut);
+        const cutDistance = clamp(preferred, minCut, maxCut);
+
+        if (cutDistance > 0.5) {
+          corners.push({ index: i, angle, sharpness, cutDistance });
+        }
+      }
+
+      return corners;
+    }
+
+    function buildCornerInfo(path, thickness, cornerRadiusFactor) {
+      const corners = detectSharpCorners(path, thickness, cornerRadiusFactor);
+      const cornerMap = new Map(corners.map(corner => [corner.index, corner]));
+      const segments = path.segments;
+      const count = segments.length;
+      const info = [];
+
+      for (let i = 0; i < count; i++) {
+        const point = segments[i].point.clone();
+        const corner = cornerMap.get(i);
+        if (!corner) {
+          info.push({ point, entry: point.clone(), exit: point.clone(), rounded: false });
+          continue;
+        }
+
+        const prev = segments[(i - 1 + count) % count].point;
+        const next = segments[(i + 1) % count].point;
+        const inDir = point.subtract(prev).normalize();
+        const outDir = next.subtract(point).normalize();
+
+        info.push({
+          point,
+          entry: point.subtract(inDir.multiply(corner.cutDistance)),
+          exit: point.add(outDir.multiply(corner.cutDistance)),
+          rounded: true
+        });
+      }
+
+      return { corners, cornerCount: corners.length, info };
+    }
+
+    function prepareRoundedBasePath(path, thickness, cornerRadiusFactor) {
+      const source = path.clone(false);
+      const prepared = buildCornerInfo(path, thickness, cornerRadiusFactor);
+      if (!prepared.cornerCount) {
+        return { path: source, cornerCount: 0 };
+      }
+
+      source.remove();
+      const { info } = prepared;
+      const count = info.length;
+      const rounded = new Path({ insert: false, closed: false });
+
+      if (path.closed) {
+        addPathPoint(rounded, info[0].rounded ? info[0].exit.clone() : info[0].point.clone());
+        for (let i = 0; i < count; i++) {
+          const next = (i + 1) % count;
+          addPathPoint(rounded, info[next].entry.clone());
+          if (info[next].rounded) {
+            rounded.quadraticCurveTo(info[next].point.clone(), info[next].exit.clone());
+          }
+        }
+        rounded.closed = true;
+      } else {
+        addPathPoint(rounded, info[0].point.clone());
+        for (let i = 1; i < count - 1; i++) {
+          const current = info[i];
+          if (current.rounded) {
+            addPathPoint(rounded, current.entry.clone());
+            rounded.quadraticCurveTo(current.point.clone(), current.exit.clone());
+          } else {
+            addPathPoint(rounded, current.point.clone());
+          }
+        }
+        addPathPoint(rounded, info[count - 1].point.clone());
+      }
+
+      return { path: rounded, cornerCount: prepared.cornerCount };
+    }
+
+    function prepareBrokenSpans(path, thickness, cornerRadiusFactor) {
+      const source = path.clone(false);
+      const prepared = buildCornerInfo(path, thickness, cornerRadiusFactor);
+      if (!prepared.cornerCount) {
+        return { spans: [source], cornerCount: 0 };
+      }
+
+      source.remove();
+      const { corners, info } = prepared;
+      const count = info.length;
+      const spans = [];
+
+      function finalizeSpan(span) {
+        if (span.segments.length >= 2 && span.length > 0.5) {
+          spans.push(span);
+        } else {
+          span.remove();
+        }
+      }
+
+      if (!path.closed) {
+        let span = new Path({ insert: false, closed: false });
+        addPathPoint(span, info[0].point.clone());
+
+        for (let i = 1; i < count - 1; i++) {
+          const current = info[i];
+          if (current.rounded) {
+            addPathPoint(span, current.entry.clone());
+            finalizeSpan(span);
+            span = new Path({ insert: false, closed: false });
+            addPathPoint(span, current.exit.clone());
+          } else {
+            addPathPoint(span, current.point.clone());
+          }
+        }
+
+        addPathPoint(span, info[count - 1].point.clone());
+        finalizeSpan(span);
+      } else {
+        const startCornerIndex = corners[0].index;
+        let span = new Path({ insert: false, closed: false });
+        addPathPoint(span, info[startCornerIndex].exit.clone());
+
+        for (let step = 1; step <= count; step++) {
+          const index = (startCornerIndex + step) % count;
+          const current = info[index];
+          if (current.rounded) {
+            addPathPoint(span, current.entry.clone());
+            finalizeSpan(span);
+            if (step < count) {
+              span = new Path({ insert: false, closed: false });
+              addPathPoint(span, current.exit.clone());
+            }
+          } else {
+            addPathPoint(span, current.point.clone());
+          }
+        }
+      }
+
+      return { spans, cornerCount: prepared.cornerCount };
+    }
+
+    function createBattingOnPreparedPath(path, thickness, justificationOffset, cornerCount) {
+      if (!path || path.length <= 0.01) return null;
+
+      const workingPath = buildWorkingPath(path, justificationOffset);
+      const pathLength = workingPath.length;
+      const curved = isCurvedPath(path);
+      const closed = !!path.closed;
+      const detailBoost = curved;
+
+      let ssegs = closed
+        ? Math.max(2, Math.round(pathLength / thickness / 0.4) * 2)
+        : Math.max(1, Math.round(pathLength / thickness / 0.2));
+
+      if (closed && ssegs % 2 !== 0) ssegs += 1;
+
+      const slength = pathLength / ssegs;
+      const points = [];
+      let side = 1;
+
+      function battPoint(segmentBase, advPro, offPro, sideSign) {
+        let distance = segmentBase + advPro * slength;
+        if (!closed) distance = Math.max(0, Math.min(pathLength, distance));
+        const frame = getFrame(workingPath, distance);
+        return frame.point.add(frame.leftNormal.multiply(sideSign * offPro * thickness));
+      }
+
+      function pushPoint(point) {
+        const prev = points[points.length - 1];
+        if (!prev || prev.getDistance(point) > 0.01) {
+          points.push(point);
+        }
+      }
+
+      pushPoint(battPoint(0, 0, 0.5, side));
+
+      for (let i = 0; i < ssegs; i++) {
+        const segmentBase = i * slength;
+
+        if (detailBoost) {
+          pushPoint(battPoint(segmentBase, 0.3, 0.49, side));
+          pushPoint(battPoint(segmentBase, 0.6, 0.46, side));
+        }
+
+        pushPoint(battPoint(segmentBase, 0.8, 0.42, side));
+        pushPoint(battPoint(segmentBase, 1.0, 0.3, side));
+        pushPoint(battPoint(segmentBase, 0.9, 0.19, side));
+        pushPoint(battPoint(segmentBase, 0.8, 0.14, side));
+
+        side = -side;
+
+        pushPoint(battPoint(segmentBase, 0.2, 0.14, side));
+        pushPoint(battPoint(segmentBase, 0.1, 0.19, side));
+        pushPoint(battPoint(segmentBase, 0.0, 0.3, side));
+        pushPoint(battPoint(segmentBase, 0.2, 0.42, side));
+
+        if (detailBoost) {
+          pushPoint(battPoint(segmentBase, 0.4, 0.46, side));
+          pushPoint(battPoint(segmentBase, 0.7, 0.49, side));
+        }
+
+        pushPoint(battPoint(segmentBase, 1.0, 0.5, side));
+      }
+
+      const batting = new Path({
+        segments: points,
+        closed: closed,
+        insert: true
+      });
+
+      if (curved) {
+        batting.smooth({ type: 'catmull-rom', factor: cornerCount ? 0.18 : 0.32 });
+      }
+
+      if (closed && batting.segments.length > 2) {
+        batting.closed = true;
+      }
+
+      workingPath.remove();
+      return batting;
+    }
+
+    function createBatting(path, thickness, justificationMode, options = {}) {
+      if (!path || path.length <= 0.01) return null;
+
+      const cornerMode = options.cornerMode || 'rounded';
+      const cornerRadiusFactor = options.cornerRadiusFactor || 1;
+      const justificationOffset = getJustificationOffset(thickness, justificationMode);
+
+      if (cornerMode === 'break') {
+        const preparedBreaks = prepareBrokenSpans(path, thickness, cornerRadiusFactor);
+        if (preparedBreaks.cornerCount > 0) {
+          const group = new Group({ insert: true });
+          for (const span of preparedBreaks.spans) {
+            const battingSpan = createBattingOnPreparedPath(span, thickness, justificationOffset, 0);
+            span.remove();
+            if (battingSpan) group.addChild(battingSpan);
+          }
+          if (!group.children.length) {
+            group.remove();
+            return null;
+          }
+          styleResult(group);
+          group.data.cornerCount = preparedBreaks.cornerCount;
+          group.data.cornerMode = 'break';
+          return group;
+        }
+      }
+
+      const prepared = prepareRoundedBasePath(path, thickness, cornerRadiusFactor);
+      const batting = createBattingOnPreparedPath(prepared.path, thickness, justificationOffset, prepared.cornerCount);
+      prepared.path.remove();
+      if (!batting) return null;
+      styleResult(batting);
+      batting.data.cornerCount = prepared.cornerCount;
+      batting.data.cornerMode = 'rounded';
+      return batting;
+    }
+
+    function generate() {
+      if (!basePath) {
+        setStatus('Create or load a base path first.');
+        return;
+      }
+
+      clearResult();
+      resultPath = createBatting(basePath, getThickness(), ui.justificationSelect.value, {
+        cornerMode: ui.cornerModeSelect.value,
+        cornerRadiusFactor: getCornerRadiusFactor()
+      });
+      if (resultPath) {
+        const cornerLabel = resultPath.data.cornerMode === 'break' ? 'break corners' : 'rounded corners';
+        const cornerInfo = resultPath.data.cornerCount ? `, ${cornerLabel} ${resultPath.data.cornerCount}` : '';
+        setStatus(`Generated batting: length ${basePath.length.toFixed(1)}, thickness ${getThickness().toFixed(1)}, ${ui.justificationSelect.value}, corner radius ${getCornerRadiusFactor().toFixed(2)}, ${ui.cornerModeSelect.value}${cornerInfo}.`);
+      } else {
+        setStatus('Unable to generate batting from this path.');
+      }
+      paper.view.update();
+    }
+
+    function maybeGenerate() {
+      if (ui.autoPreviewInput.checked && basePath) {
+        generate();
+      } else {
+        clearResult();
+        paper.view.update();
+      }
+    }
+
+    function setBasePath(path, message) {
+      if (basePath) basePath.remove();
+      basePath = path;
+      styleBase(basePath);
+      if (draftPath && draftPath !== basePath) {
+        draftPath.remove();
+        draftPath = null;
+      }
+      drawing = false;
+      maybeGenerate();
+      if (message) setStatus(message);
+      paper.view.update();
+    }
+
+    function beginDrawMode() {
+      if (draftPath) draftPath.remove();
+      draftPath = new Path({ insert: true });
+      styleDraft(draftPath);
+      drawing = true;
+      clearResult();
+      setStatus('Draw mode: click to add vertices. Enter = open, C = closed.');
+      paper.view.update();
+    }
+
+    function finishDraft(closed) {
+      if (!draftPath) {
+        setStatus('Nothing to finish. Start Draw Polyline first.');
+        return;
+      }
+
+      if (draftPath.segments.length > 1) {
+        const last = draftPath.lastSegment.point;
+        const prev = draftPath.segments[draftPath.segments.length - 2].point;
+        if (last.getDistance(prev) < 0.001) {
+          draftPath.removeSegment(draftPath.segments.length - 1);
+        }
+      }
+
+      if (draftPath.segments.length < 2) {
+        setStatus('A path needs at least two points.');
+        return;
+      }
+
+      draftPath.closed = closed;
+      draftPath.fullySelected = false;
+      setBasePath(draftPath, closed ? 'Closed base path created.' : 'Open base path created.');
+      draftPath = null;
+    }
+
+    function fitCurrentPath(path) {
+      if (!path) return;
+      const bounds = path.bounds.expand(80);
+      if (bounds.width > 0 && bounds.height > 0) {
+        paper.view.fitBounds(bounds, true);
+      }
+    }
+
+    function setLinePreset() {
+      ensureCanvasSize();
+      const path = new Path.Line(
+        new Point(120, paper.view.center.y + 40),
+        new Point(paper.view.size.width - 120, paper.view.center.y - 20)
+      );
+      setBasePath(path, 'Loaded line preset.');
+      fitCurrentPath(path);
+    }
+
+    function setArcPreset() {
+      ensureCanvasSize();
+      const w = paper.view.size.width;
+      const h = paper.view.size.height;
+      const path = new Path();
+      path.add(new Point(120, h * 0.68));
+      path.arcTo(new Point(w * 0.5, h * 0.22), new Point(w - 120, h * 0.68));
+      setBasePath(path, 'Loaded arc preset.');
+      fitCurrentPath(path);
+    }
+
+    function setCirclePreset() {
+      ensureCanvasSize();
+      const radius = Math.min(paper.view.size.width, paper.view.size.height) * 0.24;
+      const path = new Path.Circle(paper.view.center, radius);
+      setBasePath(path, 'Loaded circle preset.');
+      fitCurrentPath(path);
+    }
+
+    function setEllipsePreset() {
+      ensureCanvasSize();
+      const rect = new Rectangle(
+        new Point(paper.view.center.x - paper.view.size.width * 0.26, paper.view.center.y - paper.view.size.height * 0.16),
+        new Size(paper.view.size.width * 0.52, paper.view.size.height * 0.32)
+      );
+      const path = new Path.Ellipse(rect);
+      setBasePath(path, 'Loaded ellipse preset.');
+      fitCurrentPath(path);
+    }
+
+    function setRectanglePreset() {
+      ensureCanvasSize();
+      const rect = new Rectangle(
+        new Point(paper.view.center.x - paper.view.size.width * 0.24, paper.view.center.y - paper.view.size.height * 0.18),
+        new Size(paper.view.size.width * 0.48, paper.view.size.height * 0.36)
+      );
+      const path = new Path.Rectangle(rect);
+      setBasePath(path, 'Loaded rectangle preset.');
+      fitCurrentPath(path);
+    }
+
+    function setWavePreset() {
+      ensureCanvasSize();
+      const w = paper.view.size.width;
+      const h = paper.view.size.height;
+      const path = new Path({ insert: true });
+      path.add(new Point(80, h * 0.62));
+      path.add(new Point(w * 0.22, h * 0.35));
+      path.add(new Point(w * 0.42, h * 0.72));
+      path.add(new Point(w * 0.62, h * 0.28));
+      path.add(new Point(w * 0.80, h * 0.62));
+      path.add(new Point(w - 80, h * 0.42));
+      path.smooth({ type: 'catmull-rom', factor: 0.5 });
+      setBasePath(path, 'Loaded spline-like preset.');
+      fitCurrentPath(path);
+    }
+
+    function exportSvg() {
+      if (!basePath && !resultPath) {
+        setStatus('Nothing to export.');
+        return;
+      }
+
+      const svg = paper.project.exportSVG({ asString: true, matchShapes: true, precision: 3 });
+      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'insul-batting-paper.svg';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setStatus('Exported SVG.');
+    }
+
+    const tool = new Tool();
+
+    tool.onMouseDown = function(event) {
+      if (!drawing || !draftPath) return;
+
+      if (draftPath.segments.length === 0) {
+        draftPath.add(event.point);
+        draftPath.add(event.point.clone());
+      } else {
+        draftPath.lastSegment.point = event.point;
+        draftPath.add(event.point.clone());
+      }
+      paper.view.update();
+    };
+
+    tool.onMouseMove = function(event) {
+      if (!drawing || !draftPath || draftPath.segments.length === 0) return;
+      draftPath.lastSegment.point = event.point;
+      paper.view.update();
+    };
+
+    tool.onKeyDown = function(event) {
+      if (event.key === 'enter') {
+        finishDraft(false);
+        return false;
+      }
+      if (event.key === 'c') {
+        finishDraft(true);
+        return false;
+      }
+      if (event.key === 'escape') {
+        if (draftPath) draftPath.remove();
+        draftPath = null;
+        drawing = false;
+        paper.view.update();
+        setStatus('Draw mode cancelled.');
+        return false;
+      }
+      return true;
+    };
+
+    ui.drawBtn.addEventListener('click', beginDrawMode);
+    ui.finishOpenBtn.addEventListener('click', () => finishDraft(false));
+    ui.finishClosedBtn.addEventListener('click', () => finishDraft(true));
+    ui.clearBtn.addEventListener('click', clearAll);
+    ui.presetLineBtn.addEventListener('click', setLinePreset);
+    ui.presetArcBtn.addEventListener('click', setArcPreset);
+    ui.presetCircleBtn.addEventListener('click', setCirclePreset);
+    ui.presetEllipseBtn.addEventListener('click', setEllipsePreset);
+    ui.presetRectBtn.addEventListener('click', setRectanglePreset);
+    ui.presetWaveBtn.addEventListener('click', setWavePreset);
+    ui.generateBtn.addEventListener('click', generate);
+    ui.exportBtn.addEventListener('click', exportSvg);
+
+    ui.thicknessPreset.addEventListener('change', () => {
+      if (ui.thicknessPreset.value) {
+        ui.thicknessInput.value = ui.thicknessPreset.value;
+        maybeGenerate();
+      }
+    });
+
+    [ui.thicknessInput, ui.justificationSelect, ui.strokeInput, ui.autoPreviewInput, ui.cornerModeSelect].forEach(el => {
+      el.addEventListener('input', maybeGenerate);
+      el.addEventListener('change', maybeGenerate);
+    });
+
+    function syncCornerRadius(from, to) {
+      const value = clamp(Number(from.value) || 1, 0.4, 2.5);
+      from.value = value.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+      to.value = from.value;
+      maybeGenerate();
+    }
+
+    ui.cornerRadiusInput.addEventListener('input', () => syncCornerRadius(ui.cornerRadiusInput, ui.cornerRadiusValue));
+    ui.cornerRadiusInput.addEventListener('change', () => syncCornerRadius(ui.cornerRadiusInput, ui.cornerRadiusValue));
+    ui.cornerRadiusValue.addEventListener('input', () => syncCornerRadius(ui.cornerRadiusValue, ui.cornerRadiusInput));
+    ui.cornerRadiusValue.addEventListener('change', () => syncCornerRadius(ui.cornerRadiusValue, ui.cornerRadiusInput));
+
+    ui.showBaseInput.addEventListener('change', () => {
+      if (basePath) basePath.visible = ui.showBaseInput.checked;
+      paper.view.update();
+    });
+
+    window.addEventListener('resize', () => {
+      ensureCanvasSize();
+      paper.view.update();
+    });
+
+    ensureCanvasSize();
+    setLinePreset();
+  </script>
+</body>
+</html>

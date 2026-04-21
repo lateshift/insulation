@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Insulation Batting Tools</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0b1220;
+      --bg-2: #111827;
+      --panel: rgba(20, 26, 39, 0.9);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text: #e5eefc;
+      --muted: #9fb0d0;
+      --accent: #7dd3fc;
+      --accent-2: #93c5fd;
+      --link-bg: rgba(125, 211, 252, 0.12);
+      --link-border: rgba(125, 211, 252, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font: 15px/1.5 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg), var(--bg-2) 55%, #0f172a);
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 40px 20px 56px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      line-height: 1.15;
+    }
+
+    .lead {
+      margin: 0 0 28px;
+      color: var(--muted);
+      max-width: 780px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+
+    .card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    a.link {
+      display: inline-block;
+      text-decoration: none;
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: var(--link-bg);
+      border: 1px solid var(--link-border);
+      transition: transform 0.08s ease, background 0.15s ease;
+    }
+
+    a.link:hover {
+      transform: translateY(-1px);
+      background: rgba(125, 211, 252, 0.18);
+    }
+
+    .source {
+      margin-top: 10px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+    }
+
+    .source h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+
+    .source p {
+      margin: 0 0 10px;
+      color: var(--muted);
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.92em;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 1px 5px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Insulation Batting Tools</h1>
+    <p class="lead">
+      Small browser-based tools for exploring and reproducing the insulation batting pattern from the original AutoCAD LISP routine. Use the path-based page to generate batting along arbitrary paths, or the horizontal-fill page to fill a rectangle with the repeating batt motif.
+    </p>
+    <p class="lead" style="margin-top:-10px;">
+      <strong>Disclaimer:</strong> these browser versions are inspired by the original LISP, but they are <strong>not</strong> a 1:1 conversion. The algorithm was tweaked for browser drawing, smoothing, clipping, interactive editing, and especially corner handling / corner rounding behavior.
+    </p>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Path Generator</h2>
+        <p>
+          Interactive Paper.js version of the batting tool. Draw or choose a path, then generate insulation curls with thickness, justification, and corner-handling controls.
+        </p>
+        <div class="actions">
+          <a class="link" href="./insul-batting-paper.html">Open insul-batting-paper.html</a>
+          <a class="link" href="./SPEC_PATH_BATTING.md">Path generator spec</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Horizontal Fill</h2>
+        <p>
+          Fills a resizable rectangle with the same batt pattern along a horizontal axis. Includes spacing controls, upper/lower gaps, clipping, and mouse-based resize handles.
+        </p>
+        <div class="actions">
+          <a class="link" href="./hori-fill.html">Open hori-fill.html</a>
+          <a class="link" href="./SPEC_HORIZONTAL_CLONE.md">Horizontal fill spec</a>
+        </div>
+      </article>
+    </section>
+
+    <section class="source">
+      <h2>Original AutoCAD LISP Source</h2>
+      <p>
+        <a class="link" href="./InsulBattingPoly.lsp">Open InsulBattingPoly.lsp</a>
+      </p>
+      <p>
+        Original routine: <code>InsulBattingPoly.lsp</code><br>
+        Author: <strong>Kent Cooper</strong><br>
+        Source note in file: “Kent Cooper, last edited March 2010”
+      </p>
+      <p>
+        This project’s HTML tools are inspired by that original AutoCAD implementation and its batt-insulation drawing logic, but they intentionally include algorithmic adaptations and are not exact 1:1 ports.
+      </p>
+    </section>
+  </main>
+</body>
+</html>
